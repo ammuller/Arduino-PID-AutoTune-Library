@@ -11,7 +11,7 @@ PID_ATune::PID_ATune(double* Input, double* Output)
 {
 	input = Input;
 	output = Output;
-	controlType =0 ; //default to PI
+	controlType = P_I; //default to PI
 	noiseBand = 0.5;
 	running = false;
 	oStep = 30;
@@ -132,17 +132,88 @@ void PID_ATune::FinishUp()
 
 double PID_ATune::GetKp()
 {
-	return controlType==1 ? 0.6 * Ku : 0.4 * Ku;
+	double kp = 0;
+	switch (controlType) {
+	case P:
+		kp = 0.5 * Ku;
+		break;
+	case P_I:
+		kp = 0.45 * Ku;
+		break;
+	case P_D:
+		kp = 0.8 * Ku;
+		break;
+	case CLASSIC_PID:
+		kp = 0.6 * Ku;
+		break;
+	case PESSEN_INTEGRAL_RULE:
+		kp = 7 * Ku / 10;
+		break;
+	case SOME_OVERSHOOT:
+		kp = Ku / 3;
+		break;
+	case NO_OVERSHOOT:
+		kp = Ku / 5;
+		break;
+	}
+	return kp;
 }
-
+//0=PI, 1=PID
 double PID_ATune::GetKi()
 {
-	return controlType==1? 1.2*Ku / Pu : 0.48 * Ku / Pu;  // Ki = Kc/Ti
+	double ki = 0;
+	switch (controlType) {
+	case P:
+		ki = 0;
+		break;
+	case P_I:
+		ki = 0.54 * Ku / Pu;
+		break;
+	case P_D:
+		break;
+	case CLASSIC_PID:
+		ki = 1.2 * Ku / Pu;
+		break;
+	case PESSEN_INTEGRAL_RULE:
+		ki = 1.75 * Ku / Pu;
+		break;
+	case SOME_OVERSHOOT:
+		ki = ki = 0.666 * Ku / Pu;
+		break;
+	case NO_OVERSHOOT:
+		ki = ki = (2 / 5) * Ku / Pu;
+		break;
+	}
+	return ki;
 }
 
 double PID_ATune::GetKd()
 {
-	return controlType==1? 0.075 * Ku * Pu : 0;  //Kd = Kc * Td
+	double kd = 0;
+		switch (controlType) {
+		case P:
+			kd = 0;
+			break;
+		case P_I:
+			kd = 0;
+			break;
+		case P_D:
+			kd = Ku * Pu / 10;
+			break;
+		case CLASSIC_PID:
+			kd = 3 * Ku * Pu / 40;
+			break;
+		case PESSEN_INTEGRAL_RULE:
+			kd = 21 * Ku * Pu / 200;
+			break;
+		case SOME_OVERSHOOT:
+			kd = Ku * Pu / 9;
+			break;
+		case NO_OVERSHOOT:
+			kd = Ku * Pu / 15;
+			break;
+		}
+		return kd;
 }
 
 void PID_ATune::SetOutputStep(double Step)
@@ -155,9 +226,9 @@ double PID_ATune::GetOutputStep()
 	return oStep;
 }
 
-void PID_ATune::SetControlType(int Type) //0=PI, 1=PID
+void PID_ATune::SetControlType(ControlType controlType)
 {
-	controlType = Type;
+	this->controlType = controlType;
 }
 int PID_ATune::GetControlType()
 {
